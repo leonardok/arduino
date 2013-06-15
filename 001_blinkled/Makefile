@@ -1,3 +1,14 @@
+# Options for Arduino NANO
+DEV_NANO       = /dev/ttyUSB0
+BAUD_NANO       = 115200
+
+# Options for Arduino UNO
+DEV_UNO        = /dev/ttyACM0
+BAUD_UNO       = 115200
+
+# Commom
+AVRDUDE_BOTH   = -p atmega328p -c arduino
+
 PRG            = blinkled
 OBJ            = main.o
 MCU_TARGET     = atmega328p
@@ -9,6 +20,7 @@ LIBS           =
 # You should not have to change anything below here.
 
 CC             = avr-gcc
+AVRDUDE        = avrdude
 
 CFLAGS        = -g -Wall $(OPTIMIZE) -mmcu=$(MCU_TARGET) $(DEFS)
 LDFLAGS       = -Wl,-Map,$(PRG).map
@@ -24,6 +36,13 @@ $(PRG).elf: $(OBJ)
 clean:
 	rm -rf *.o $(PRG).elf *.eps *.png *.pdf *.bak
 	rm -rf *.lst *.map $(EXTRA_CLEAN_FILES)
+
+install_nano:
+	sudo $(AVRDUDE) $(AVRDUDE_BOTH) -b $(BAUD_NANO) -P $(DEV_NANO) -U flash:w:${PRG}.hex
+
+install_uno:
+	sudo $(AVRDUDE) -F -V $(AVRDUDE_BOTH) -b $(BAUD_UNO) -P $(DEV_UNO) -U flash:w:${PRG}.hex
+
 
 lst:  $(PRG).lst
 
@@ -63,20 +82,3 @@ esrec: $(PRG)_eeprom.srec
 
 %_eeprom.bin: %.elf
 	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O binary $< $@
-
-# Every thing below here is used by avr-libc's build system and can be ignored
-# by the casual user.
-
-JPEGFILES               = stdiodemo-setup.jpg
-
-JPEG2PNM                = jpegtopnm
-PNM2EPS                 = pnmtops
-JPEGRESOLUTION          = 180
-EXTRA_CLEAN_FILES       = *.hex *.bin *.srec *.eps
-
-dox: ${JPEGFILES:.jpg=.eps}
-
-%.eps: %.jpg
-	$(JPEG2PNM) $< |\
-	$(PNM2EPS) -noturn -dpi $(JPEGRESOLUTION) -equalpixels \
-	> $@
